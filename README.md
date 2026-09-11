@@ -11,6 +11,9 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/jinjoee/idh-autofish/
 Running the link shows a **key prompt** first — enter the key (shared
 separately, never in this repo) to unlock the main panel.
 
+Keys rotate **daily at midnight UTC** (yesterday's key works as grace).
+Get today's key from the owner's key page after completing the link steps.
+
 Stand at your fishing spot with a rod, run it, open the panel:
 - **AutoFish ON/OFF**, **AutoSell ON/OFF**
 - **Sell filter dropdown** (weight filters double as rarity: light = common)

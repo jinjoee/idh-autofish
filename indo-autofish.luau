@@ -32,11 +32,54 @@ CFG.BreakMin = CFG.BreakMin or 8
 CFG.BreakMax = CFG.BreakMax or 20
 CFG.Deadband = CFG.Deadband or 0.004 -- how close to center before releasing
 CFG.Stats = CFG.Stats or {casts = 0, catches = 0, misses = 0, sold = 0, earned = ""}
--- KEY SYSTEM: key prompt first; everything else stays dormant until unlock.
--- Change this key and share it PRIVATELY (not in repo/README): the file is
--- public, so anyone opening it can read this string. Keeps casual
--- link-sharers out; NOT uncrackable DRM (that needs a key server).
-local SCRIPT_KEY = "IDH-FISH-2026"
+-- KEY SYSTEM, v2 (daily keys, 24h windows):
+-- The script accepts: your MASTER_KEY (never expires, only for you) or
+-- TODAY's / YESTERDAY's derived key (UTC). Keys look like
+-- "6a97588d2e2a92141b64257975b542a4" and change every midnight UTC.
+-- Flow: friend finishes your Linkvertise/Work.ink steps -> lands on your key
+-- page (Pastebin/Discord pinned) where you post today's key -> pastes it in.
+-- Same honesty as before: the SECRET below is readable in this public file,
+-- so a determined reader could re-derive keys. This stops casual sharing
+-- and powers the link-monetization loop; true per-user HWID keys need a
+-- key server. Change SECRET + MASTER_KEY, then tell me to repush.
+local KEY_SECRET = "IDH-9f2K7qZ3mX8"
+local MASTER_KEY = "jinjoee-owner-7x2q"
+local function djb2(s, seed)
+	local h = seed
+	for i = 1, #s do
+		h = (h * 33 + string.byte(s, i)) % 4294967296
+	end
+	return h
+end
+local function hex8(n)
+	local digits = "0123456789abcdef"
+	local out = ""
+	for _ = 1, 8 do
+		local d = n % 16
+		out = string.sub(digits, d + 1, d + 1) .. out
+		n = math.floor(n / 16)
+	end
+	return out
+end
+local function dailyKey(dateStr)
+	local parts = ""
+	local seeds = {5381, 2443, 7919, 104729}
+	for r = 1, 4 do
+		parts = parts .. hex8(djb2(KEY_SECRET .. "|" .. dateStr .. "|" .. r, seeds[r]))
+	end
+	return parts -- 32 hex chars, e.g. 6a97588d...
+end
+local function utcDate(offsetDays)
+	local t = os.date("!*t", os.time() + (offsetDays or 0) * 86400)
+	return string.format("%04d-%02d-%02d", t.year, t.month, t.day)
+end
+local function validKey(v)
+	if v == MASTER_KEY then return true, "master" end
+	if v == dailyKey(utcDate(0)) then return true, "today" end
+	if v == dailyKey(utcDate(-1)) then return true, "yesterday" end -- timezone grace
+	return false
+end
+getgenv().IndoAutoFish_CheckKey = function(k) return validKey(tostring(k or "")) end
 CFG.Unlocked = false -- always ask on each execute
 CFG.AutoSell = (CFG.AutoSell == nil) and true or CFG.AutoSell
 CFG.SellEvery = CFG.SellEvery or 10 -- sell after this many new catches
@@ -626,15 +669,16 @@ task.spawn(function()
 	status.TextColor3 = Color3.fromRGB(255, 120, 120)
 
 	local function tryUnlock()
-		local v = tostring(input.Text or ""):gsub("%s+", "")
-		if v == SCRIPT_KEY then
+		local v = tostring(input.Text or ""):gsub("%s+", ""):lower()
+		local ok, which = validKey(v)
+		if ok then
 			CFG.Unlocked = true
 			local main = pg:FindFirstChild("IndoAutoFishUI")
 			if main then main.Enabled = true end
 			gui:Destroy()
-			print("[AutoFish] unlocked")
+			print("[AutoFish] unlocked (" .. tostring(which) .. ")")
 		else
-			status.Text = "Wrong key, try again"
+			status.Text = "Wrong or expired key"
 		end
 	end
 	go.Activated:Connect(tryUnlock)
