@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDH AutoFish — Daily Key</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: #14161c; color: #ebebeb; font-family: 'Segoe UI', Arial, sans-serif; padding: 16px; }
+  .card { background: #1e212b; border: 1px solid #464e5f; border-radius: 12px; padding: 32px 28px;
+    max-width: 520px; width: 100%; text-align: center; }
+  h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: 1px; }
+  .sub { color: #9aa0b0; font-size: 13px; margin-bottom: 20px; }
+  #key { font-family: Consolas, monospace; font-size: 15px; word-break: break-all;
+    background: #14161c; border: 1px solid #464e5f; border-radius: 8px; padding: 14px 12px; margin-bottom: 14px; }
+  button { background: #20783c; color: #fff; border: 0; border-radius: 8px; padding: 12px 28px;
+    font-size: 15px; font-weight: bold; cursor: pointer; }
+  button:active { background: #185c2e; }
+  .note { margin-top: 16px; font-size: 12px; color: #9aa0b0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>INDO AUTOFISH</h1>
+  <div class="sub" id="dateLine">daily key</div>
+  <div id="key">…</div>
+  <button id="copy">Copy key</button>
+  <div class="note">Valid until midnight UTC. Paste it into the script's key box.<br>Yesterday's key works as grace.</div>
+</div>
+<script>
+// Mirrors the Luau djb2 in indo-autofish.luau EXACTLY (do not "improve" either side alone).
+var SECRET = "IDH-9f2K7qZ3mX8";
+function djb2(s, seed) {
+  var h = seed >>> 0;
+  for (var i = 0; i < s.length; i++) { h = (((h * 33) >>> 0) + s.charCodeAt(i)) >>> 0; }
+  return ("0000000" + h.toString(16)).slice(-8);
+}
+function dailyKey(ds) {
+  var seeds = [5381, 2443, 7919, 104729], out = "";
+  for (var r = 0; r < 4; r++) out += djb2(SECRET + "|" + ds + "|" + (r + 1), seeds[r]);
+  return out;
+}
+function utc(offset) {
+  var t = new Date(Date.now() + (offset || 0) * 864e5);
+  return t.toISOString().slice(0, 10);
+}
+var today = utc(0);
+document.getElementById("dateLine").textContent = "key for " + today + " (UTC)";
+document.getElementById("key").textContent = dailyKey(today);
+document.getElementById("copy").onclick = function () {
+  var k = document.getElementById("key").textContent;
+  if (navigator.clipboard) navigator.clipboard.writeText(k);
+  this.textContent = "Copied!";
+  var b = this;
+  setTimeout(function () { b.textContent = "Copy key"; }, 1500);
+};
+</script>
+</body>
+</html>
