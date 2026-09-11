@@ -97,9 +97,12 @@ pcall(function() VIM = game:GetService("VirtualInputManager") end)
 -- presses and the camera shake do NOT reset that timer (synthetic in-game
 -- input doesn't count). VirtualUser clicks DO — this is the standard,
 -- traffic-free bypass: no remotes, no movement, just presence.
+-- Toggleable from the panel (CFG.AntiAfk).
+CFG.AntiAfk = (CFG.AntiAfk == nil) and true or CFG.AntiAfk
 pcall(function()
 	local VU = game:GetService("VirtualUser")
 	LocalPlayer.Idled:Connect(function()
+		if not CFG.AntiAfk then return end
 		pcall(function()
 			VU:CaptureController()
 			VU:ClickButton2(Vector2.new())
@@ -328,7 +331,7 @@ task.spawn(function()
 
 	local panel = Instance.new("Frame")
 	panel.Name = "Panel"
-	panel.Size = UDim2.new(0, 230, 0, 300)
+	panel.Size = UDim2.new(0, 230, 0, 344)
 	panel.Position = UDim2.new(0, 12, 0.35, 0)
 	panel.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
 	panel.BackgroundTransparency = 0.1
@@ -377,16 +380,18 @@ task.spawn(function()
 	fishBtn.Name = "FishToggle"
 	local sellBtn = button("", 82)
 	sellBtn.Name = "SellToggle"
-	local filterBtn = button("", 126)
+	local afkBtn = button("", 126)
+	afkBtn.Name = "AfkToggle"
+	local filterBtn = button("", 170)
 	filterBtn.Name = "FilterButton"
-	local sellNowBtn = button("Sell Now", 170)
+	local sellNowBtn = button("Sell Now", 214)
 	sellNowBtn.Name = "SellNow"
 	sellNowBtn.Size = UDim2.new(1, -16, 0, 36)
 	-- threshold stepper: [-] [N fish] [+]
 	local minusBtn = Instance.new("TextButton")
 	minusBtn.Name = "ThreshMinus"
 	minusBtn.Size = UDim2.new(0, 52, 0, 36)
-	minusBtn.Position = UDim2.new(0, 8, 0, 210)
+	minusBtn.Position = UDim2.new(0, 8, 0, 254)
 	minusBtn.BackgroundColor3 = Color3.fromRGB(45, 50, 62)
 	minusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	minusBtn.TextSize = 20
@@ -397,7 +402,7 @@ task.spawn(function()
 	local threshLbl = Instance.new("TextLabel")
 	threshLbl.Name = "ThreshLbl"
 	threshLbl.Size = UDim2.new(1, -128, 0, 36)
-	threshLbl.Position = UDim2.new(0, 64, 0, 210)
+	threshLbl.Position = UDim2.new(0, 64, 0, 254)
 	threshLbl.BackgroundTransparency = 1
 	threshLbl.TextColor3 = Color3.fromRGB(235, 235, 235)
 	threshLbl.TextSize = 13
@@ -407,7 +412,7 @@ task.spawn(function()
 	local plusBtn = Instance.new("TextButton")
 	plusBtn.Name = "ThreshPlus"
 	plusBtn.Size = UDim2.new(0, 52, 0, 36)
-	plusBtn.Position = UDim2.new(1, -60, 0, 210)
+	plusBtn.Position = UDim2.new(1, -60, 0, 254)
 	plusBtn.BackgroundColor3 = Color3.fromRGB(45, 50, 62)
 	plusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	plusBtn.TextSize = 20
@@ -415,7 +420,7 @@ task.spawn(function()
 	plusBtn.Text = "+"
 	plusBtn.Parent = panel
 	Instance.new("UICorner").Parent = plusBtn
-	local statsLbl = label("", 250, 44)
+	local statsLbl = label("", 294, 44)
 	statsLbl.TextYAlignment = Enum.TextYAlignment.Top
 	statsLbl.TextSize = 12
 	statsLbl.Font = Enum.Font.Gotham
@@ -425,7 +430,7 @@ task.spawn(function()
 	local dropList = Instance.new("Frame")
 	dropList.Name = "DropList"
 	dropList.Size = UDim2.new(1, -16, 0, #SELL_OPTIONS * 44)
-	dropList.Position = UDim2.new(0, 8, 0, 168)
+	dropList.Position = UDim2.new(0, 8, 0, 212)
 	dropList.BackgroundColor3 = Color3.fromRGB(30, 33, 42)
 	dropList.BorderSizePixel = 0
 	dropList.Visible = false
@@ -508,6 +513,8 @@ task.spawn(function()
 		fishBtn.BackgroundColor3 = CFG.Enabled and Color3.fromRGB(32, 120, 60) or Color3.fromRGB(120, 40, 40)
 		sellBtn.Text = "AutoSell: " .. (CFG.AutoSell and "ON" or "OFF")
 		sellBtn.BackgroundColor3 = CFG.AutoSell and Color3.fromRGB(32, 120, 60) or Color3.fromRGB(120, 40, 40)
+		afkBtn.Text = "AntiAFK: " .. (CFG.AntiAfk and "ON" or "OFF")
+		afkBtn.BackgroundColor3 = CFG.AntiAfk and Color3.fromRGB(32, 120, 60) or Color3.fromRGB(120, 40, 40)
 		filterBtn.Text = "Sell: " .. tostring(CFG.SellFilter) .. (dropList.Visible and " [^]" or " [v]")
 		threshLbl.Text = "at " .. tostring(CFG.SellAt) .. " fish"
 		local s = CFG.Stats
@@ -522,6 +529,10 @@ task.spawn(function()
 	end)
 	sellBtn.Activated:Connect(function()
 		CFG.AutoSell = not CFG.AutoSell
+		paint()
+	end)
+	afkBtn.Activated:Connect(function()
+		CFG.AntiAfk = not CFG.AntiAfk
 		paint()
 	end)
 	sellNowBtn.Activated:Connect(function()
