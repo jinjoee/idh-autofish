@@ -32,6 +32,12 @@ CFG.BreakMin = CFG.BreakMin or 8
 CFG.BreakMax = CFG.BreakMax or 20
 CFG.Deadband = CFG.Deadband or 0.004 -- how close to center before releasing
 CFG.Stats = CFG.Stats or {casts = 0, catches = 0, misses = 0, sold = 0, earned = ""}
+-- KEY SYSTEM: key prompt first; everything else stays dormant until unlock.
+-- Change this key and share it PRIVATELY (not in repo/README): the file is
+-- public, so anyone opening it can read this string. Keeps casual
+-- link-sharers out; NOT uncrackable DRM (that needs a key server).
+local SCRIPT_KEY = "IDH-FISH-2026"
+CFG.Unlocked = false -- always ask on each execute
 CFG.AutoSell = (CFG.AutoSell == nil) and true or CFG.AutoSell
 CFG.SellEvery = CFG.SellEvery or 10 -- sell after this many new catches
 CFG.SellAt = CFG.SellAt or 15 -- sell when bag holds this many fish (no hard cap found: 17 tools seen fine, so this is YOUR cap)
@@ -109,6 +115,7 @@ end
 
 -- Minigame driver: track RedBar center with WhiteBar, 60Hz.
 task.spawn(function()
+	while GEN == CFG.Gen and not CFG.Unlocked do task.wait(0.5) end
 	while GEN == CFG.Gen do
 		task.wait(1 / 60)
 		if not CFG.Enabled then
@@ -173,6 +180,7 @@ end
 
 -- Cast loop: equip -> throw -> wait for bite/GUI end -> pause -> repeat.
 task.spawn(function()
+	while GEN == CFG.Gen and not CFG.Unlocked do task.wait(0.5) end
 	while GEN == CFG.Gen do
 		if not CFG.Enabled then task.wait(0.5) continue end
 		local rod, equipped = findRod()
@@ -258,6 +266,7 @@ task.spawn(function()
 	gui.Name = "IndoAutoFishUI"
 	gui.ResetOnSpawn = false
 	gui.DisplayOrder = 999
+	gui.Enabled = false -- key gate: shown only after unlock
 	gui.Parent = pg
 
 	local panel = Instance.new("Frame")
@@ -532,7 +541,7 @@ task.spawn(function()
 				if GEN ~= CFG.Gen then return end
 				if reel.Enabled then
 					task.wait(0.3)
-					if GEN == CFG.Gen and gui.Parent then
+					if GEN == CFG.Gen and gui.Parent and CFG.Unlocked then
 						gui.Enabled = true
 						pcall(paint)
 					end
@@ -540,5 +549,96 @@ task.spawn(function()
 			end)
 			if reel.Enabled and not gui.Enabled then gui.Enabled = true end
 		end
+	end)
+end)
+
+-- KEY PROMPT: first thing the user sees. Main UI + loops wait on CFG.Unlocked.
+task.spawn(function()
+	while GEN == CFG.Gen and CFG.Unlocked do task.wait(0.5) end
+	if GEN ~= CFG.Gen or CFG.Unlocked then return end
+	local pg = LocalPlayer:WaitForChild("PlayerGui")
+	local old = pg:FindFirstChild("IndoFishKeyUI")
+	if old then old:Destroy() end
+
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "IndoFishKeyUI"
+	gui.ResetOnSpawn = false
+	gui.DisplayOrder = 1000
+	gui.Parent = pg
+
+	local box = Instance.new("Frame")
+	box.Name = "KeyBox"
+	box.Size = UDim2.new(0, 260, 0, 170)
+	box.Position = UDim2.new(0.5, -130, 0.4, 0)
+	box.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
+	box.BackgroundTransparency = 0.08
+	box.BorderSizePixel = 0
+	box.Active = true
+	box.Draggable = true
+	box.Parent = gui
+	Instance.new("UICorner").Parent = box
+	local st = Instance.new("UIStroke")
+	st.Color = Color3.fromRGB(70, 78, 95)
+	st.Transparency = 0.4
+	st.Parent = box
+
+	local function txt(t, y, h, size, bold)
+		local l = Instance.new("TextLabel")
+		l.Size = UDim2.new(1, -24, 0, h)
+		l.Position = UDim2.new(0, 12, 0, y)
+		l.BackgroundTransparency = 1
+		l.TextColor3 = Color3.fromRGB(235, 235, 235)
+		l.TextSize = size or 14
+		l.Font = bold and Enum.Font.GothamBold or Enum.Font.Gotham
+		l.Text = t
+		l.Parent = box
+		return l
+	end
+
+	txt("INDO AUTOFISH", 10, 24, 16, true)
+	txt("Enter your key to continue", 36, 20, 13, false)
+	local input = Instance.new("TextBox")
+	input.Name = "KeyInput"
+	input.Size = UDim2.new(1, -24, 0, 36)
+	input.Position = UDim2.new(0, 12, 0, 60)
+	input.BackgroundColor3 = Color3.fromRGB(45, 50, 62)
+	input.TextColor3 = Color3.fromRGB(255, 255, 255)
+	input.PlaceholderText = "xxxx-xxxx-xxxx"
+	input.PlaceholderColor3 = Color3.fromRGB(140, 140, 150)
+	input.TextSize = 15
+	input.Font = Enum.Font.Gotham
+	input.Text = ""
+	input.ClearTextOnFocus = false
+	input.Parent = box
+	Instance.new("UICorner").Parent = input
+	local go = Instance.new("TextButton")
+	go.Name = "KeyGo"
+	go.Size = UDim2.new(1, -24, 0, 36)
+	go.Position = UDim2.new(0, 12, 0, 102)
+	go.BackgroundColor3 = Color3.fromRGB(32, 120, 60)
+	go.TextColor3 = Color3.fromRGB(255, 255, 255)
+	go.TextSize = 15
+	go.Font = Enum.Font.GothamBold
+	go.Text = "Unlock"
+	go.Parent = box
+	Instance.new("UICorner").Parent = go
+	local status = txt("", 140, 20, 12, false)
+	status.TextColor3 = Color3.fromRGB(255, 120, 120)
+
+	local function tryUnlock()
+		local v = tostring(input.Text or ""):gsub("%s+", "")
+		if v == SCRIPT_KEY then
+			CFG.Unlocked = true
+			local main = pg:FindFirstChild("IndoAutoFishUI")
+			if main then main.Enabled = true end
+			gui:Destroy()
+			print("[AutoFish] unlocked")
+		else
+			status.Text = "Wrong key, try again"
+		end
+	end
+	go.Activated:Connect(tryUnlock)
+	input.FocusLost:Connect(function(enter)
+		if enter then tryUnlock() end
 	end)
 end)

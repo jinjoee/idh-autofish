@@ -8,6 +8,9 @@ Auto-fishing for **Indo Hangout** (`PlaceId 9788848685`). Plays the reeling mini
 loadstring(game:HttpGet("https://raw.githubusercontent.com/jinjoee/idh-autofish/main/indo-autofish.luau"))()
 ```
 
+Running the link shows a **key prompt** first — enter the key (shared
+separately, never in this repo) to unlock the main panel.
+
 Stand at your fishing spot with a rod, run it, open the panel:
 - **AutoFish ON/OFF**, **AutoSell ON/OFF**
 - **Sell filter dropdown** (weight filters double as rarity: light = common)
