@@ -93,6 +93,20 @@ local LocalPlayer = Players.LocalPlayer
 local VIM = nil
 pcall(function() VIM = game:GetService("VirtualInputManager") end)
 
+-- Anti-AFK: Roblox kicks after 20 min without REAL input. Our VIM Space
+-- presses and the camera shake do NOT reset that timer (synthetic in-game
+-- input doesn't count). VirtualUser clicks DO — this is the standard,
+-- traffic-free bypass: no remotes, no movement, just presence.
+pcall(function()
+	local VU = game:GetService("VirtualUser")
+	LocalPlayer.Idled:Connect(function()
+		pcall(function()
+			VU:CaptureController()
+			VU:ClickButton2(Vector2.new())
+		end)
+	end)
+end)
+
 local function gui()
 	local pg = LocalPlayer:FindFirstChildOfClass("PlayerGui")
 	local r = pg and pg:FindFirstChild("Reeling")
