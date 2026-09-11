@@ -611,7 +611,7 @@ task.spawn(function()
 
 	local box = Instance.new("Frame")
 	box.Name = "KeyBox"
-	box.Size = UDim2.new(0, 260, 0, 170)
+	box.Size = UDim2.new(0, 260, 0, 218)
 	box.Position = UDim2.new(0.5, -130, 0.4, 0)
 	box.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
 	box.BackgroundTransparency = 0.08
@@ -662,11 +662,31 @@ task.spawn(function()
 	go.TextColor3 = Color3.fromRGB(255, 255, 255)
 	go.TextSize = 15
 	go.Font = Enum.Font.GothamBold
-	go.Text = "Unlock"
+	go.Text = "Verify"
 	go.Parent = box
 	Instance.new("UICorner").Parent = go
-	local status = txt("", 140, 20, 12, false)
+	local getkey = Instance.new("TextButton")
+	getkey.Name = "KeyGet"
+	getkey.Size = UDim2.new(1, -24, 0, 32)
+	getkey.Position = UDim2.new(0, 12, 0, 144)
+	getkey.BackgroundColor3 = Color3.fromRGB(45, 50, 62)
+	getkey.TextColor3 = Color3.fromRGB(255, 255, 255)
+	getkey.TextSize = 14
+	getkey.Font = Enum.Font.Gotham
+	getkey.Text = "Get Key"
+	getkey.Parent = box
+	Instance.new("UICorner").Parent = getkey
+	local status = txt("", 182, 22, 12, false)
 	status.TextColor3 = Color3.fromRGB(255, 120, 120)
+	getkey.Activated:Connect(function()
+		local ok = false
+		pcall(function()
+			setclipboard("https://link-target.net/9258860/yPdMbtec04RT")
+			ok = true
+		end)
+		status.TextColor3 = ok and Color3.fromRGB(120, 255, 120) or Color3.fromRGB(255, 120, 120)
+		status.Text = ok and "Link copied, paste it in your browser" or "Copy failed: link-target.net/9258860/yPdMbtec04RT"
+	end)
 
 	local function tryUnlock()
 		local v = tostring(input.Text or ""):gsub("%s+", ""):lower()
